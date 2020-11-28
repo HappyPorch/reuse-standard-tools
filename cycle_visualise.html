@@ -1,0 +1,358 @@
+<html>
+	<head>
+        <style>
+            #cycle {
+              border: 1px solid black
+            }
+            .label {
+                font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 14px
+                }
+            .cycle_title {
+              color: #999999;
+              font-size: 24px;
+              font-weight: bold;
+              margin-top: 0px;
+              margin-bottom: 1px;
+            }
+            .nodeCircle {
+              stroke: #424242;
+              stroke-width: "1px"
+            }
+            .start_step {
+              fill: #BDD9BF;
+            }
+            .step {
+              fill: #A997DF;
+            }
+            .clean_step {
+              fill: #FFC857;
+            }
+            ._step_exit {
+              fill-opacity: 0.4;
+              stroke-dasharray: 8;
+            }
+            ._step_entry {
+              fill-opacity: 0.8;
+              stroke-dasharray: 4;
+            }
+        </style>
+	</head>
+
+<body>
+  <div id="cycle"></div>
+<script src="js/d3.v4.min.js"></script>
+<script>
+
+  var activities = [
+    {
+        "activity_id": "1a774e5a-cd1a-40d4-97b7-f513fd4112b3",
+        "activity_type": "step",
+        "name": "Purchased",
+        "next" : ["a2cc56d3-1223-4bca-bc21-f0a35109d166"]
+    },
+    {
+        "activity_id": "a2cc56d3-1223-4bca-bc21-f0a35109d166",
+        "activity_type": "start_step",
+        "name": "Filled",
+        "next" : ["acc46828-10cd-4066-8700-011dc35df8ff"]
+    },
+    {
+        "activity_id": "acc46828-10cd-4066-8700-011dc35df8ff",
+        "activity_type": "step",
+        "name": "Delivered",
+        "next" : ["2b91eb48-b33f-400b-9b54-88b338f2cb9d"]
+    },
+    {
+        "activity_id": "2b91eb48-b33f-400b-9b54-88b338f2cb9d",
+        "activity_type": "step",
+        "name": "Returned",
+        "next" : ["441ed3d0-cfac-48d9-a9ef-571594d8e400"]
+    },
+    {
+        "activity_id": "441ed3d0-cfac-48d9-a9ef-571594d8e400",
+        "activity_type": "clean_step",
+        "name": "Cleaned",
+        "next" : ["a2cc56d3-1223-4bca-bc21-f0a35109d166", "bfe19346-5463-4f4c-83a7-88ba0f1e5531"]
+    },
+    {
+        "activity_id": "bfe19346-5463-4f4c-83a7-88ba0f1e5531",
+        "activity_type": "step",
+        "name": "Recycled"
+    }
+];
+
+var links = [ ];
+// convert activities to links
+activities.forEach(function(act) {
+  if (act.next) {
+      act.next.forEach(function(n) {
+      links.push({ source: act.activity_id, target: n, name: act.name });
+    });
+  }
+});
+
+function getStepType(act) {
+  return act.activity_type ?? "step";
+}
+
+var nodes = [];
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+  if (!nodes.find(({ id }) => id === link.source)) 
+    nodes.push({id: link.source, name: link.source, label: link.name});
+    if (!nodes.find(({ id }) => id === link.target)) {
+      var targetAct = activities.find(({ activity_id }) => activity_id === link.target);
+      nodes.push({id: link.target, name: link.target, label: targetAct.name});
+    }
+});
+
+nodes.forEach(function(n) {
+  var activity = activities.find( ({ activity_id }) => activity_id === n.id);
+  n.type = getStepType( activity );
+  n.is_exit = isExitActivity(activity.next); 
+  n.is_entry = isEntryActivity(activities, n.id);
+});
+
+function isEntryActivity(activities, activity_id) {
+  return !activities.find( ({ next }) => next && next.includes(activity_id));
+}
+function isExitActivity(activity_next) {
+  return !activity_next || activity_next.length == 0;
+}
+</script>
+
+<script>
+//----------------------------------------------------------------------------------------
+
+function drawCycle(graph) {
+
+  var simulation = d3.forceSimulation()
+      .force("link", d3.forceLink().id(function(d) { return d.id; }))
+      .force('charge', d3.forceManyBody()
+        .strength(-1900)
+        .theta(0.5)
+        .distanceMax(1500)
+      )
+      .force('collision', d3.forceCollide().radius(function(d) {
+              return d.radius
+            }))
+    .force("center", d3.forceCenter(document.querySelector(container).clientWidth / 2, document.querySelector(container).clientHeight / 2));
+
+  var defs = svg.append("defs");
+
+  defs.append('marker')
+      .attr('id','arrowhead')
+      .attr('viewBox','-0 -5 10 10')
+      .attr('refX',13)
+      .attr('refY',0)
+      .attr('orient','auto')
+      .attr('markerWidth',13)
+      .attr('markerHeight',13)
+      .attr('xoverflow','visible')
+    .append('path')
+      .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+      .attr('fill', '#999')
+      .style('stroke','none');
+
+  var link = svg.append("g")
+            .selectAll("line")
+            .data(graph.links)
+            .enter().append("polyline")
+            .attr('marker-end','url(#arrowhead)')
+
+        link
+          .style("stroke", "#aaa");
+          
+     var node = svg.append("g")
+          .attr("class", "nodes")
+          .selectAll("circle")
+          .data(graph.nodes)
+          .enter().append("circle")
+          .attr("r",36);
+              //.attr("r", function(d){return d.category==0 ? 45 : 35}); //todo: different colours for diff types
+    
+      node
+      .attr("class", function(d) { 
+        return cls = "nodeCircle " + d.type + ( (d.is_exit) ? " _step_exit" : "" ) + ( (d.is_entry) ? " _step_entry" : "" )
+      } )
+      
+      node
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout)
+        .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    //.on("end", dragended)
+            );
+
+      var label = svg.append("g")
+          .attr("class", "labels")
+          .selectAll("text")
+          .data(graph.nodes)
+          .enter().append("text")
+          .text(function(d) { return d.label; })
+          .attr("class", "label")
+          .attr("dy", ".35em")
+          .attr("text-anchor", "middle");
+      
+      simulation
+          .nodes(graph.nodes)
+          .on("tick", ticked);
+
+      simulation.force("link")
+          .links(graph.links);
+
+      function ticked() {
+          link
+          .attr("points", function(d) {
+            var r = 36;
+            sX = getSourceNodeCircumferencePoint(d)[0];
+            sY = getSourceNodeCircumferencePoint(d)[1];
+            tX = getTargetNodeCircumferencePoint(d)[0];
+            tY = getTargetNodeCircumferencePoint(d)[1];
+            return sX + "," + sY + " " + 
+                   (sX + tX)/2 + "," + (sY + tY)/2 + " " +
+                   tX + "," + tY; });
+
+          node
+               .attr("cx", function (d) { return d.x+5; })
+               .attr("cy", function(d) { return d.y-3; });
+          
+          label
+              .attr("x", function(d) { return d.x+4; })
+              .attr("y", function (d) { return d.y-4; });
+
+          }
+
+          function getTargetNodeCircumferencePoint(d){
+
+            var t_radius = 36;
+            var dx = d.target.x - d.source.x;
+            var dy = d.target.y - d.source.y;
+            var gamma = Math.atan2(dy,dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
+            var tx = d.target.x - (Math.cos(gamma) * t_radius);
+            var ty = d.target.y - (Math.sin(gamma) * t_radius);
+      
+            return [tx,ty]; 
+          }
+          function getSourceNodeCircumferencePoint(d){
+      
+            var t_radius = 36;
+            var dx = d.source.x - d.target.x;
+            var dy = d.source.y - d.target.y;
+            var gamma = Math.atan2(dy,dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
+            var tx = d.source.x - (Math.cos(gamma) * t_radius);
+            var ty = d.source.y - (Math.sin(gamma) * t_radius);
+      
+            return [tx,ty]; 
+          }
+
+
+        function mouseover() {
+          d3.select(this).select("circle").transition()
+              .duration(750)
+              .attr("r", 16);
+        }
+
+        function mouseout() {
+          d3.select(this).select("circle").transition()
+              .duration(750)
+              .attr("r", 8);
+        }
+
+
+    function dragstarted(d) {
+      if (!d3.event.active) simulation.alphaTarget(0.3).restart()
+      d.fx = d.x;
+      d.fy = d.y;
+  }
+
+  function dragged(d) {
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+  }
+
+//    function dragended(d) {
+//        if (!d3.event.active) simulation.alphaTarget(0);
+//        d.fx = undefined;
+//        d.fy = undefined;
+//    }
+
+}
+
+function drawKey(activityTypes, activities) {
+
+  var x = 25;
+  var y = 0;
+  var dy = 45;
+  var nodes = [];
+  var entryNode = null;
+  var exitNode = null;
+  activityTypes.forEach( function(a) {
+    if (activities.find( ({ activity_type }) => activity_type = a.Code )) {
+      nodes.push({ code: a.Code, title: a.Title });
+    }
+    if (!entryNode && activities.find( ({ activity_id }) => isEntryActivity(activities, activity_id) )) {
+      entryNode = { code: "step _step_entry", title: "Cycle Entry" };
+    }
+    if (!exitNode && activities.find( ({ next }) => isExitActivity(next) ) ) {
+      exitNode = { code: "step _step_exit", title: "Cycle Exit" };
+    }
+  });
+  if (entryNode) nodes.push(entryNode);
+  if (exitNode) nodes.push(exitNode);
+
+  var key = svg.selectAll('.key')
+    .data(nodes, function(d) {
+      return d.code;
+    })
+    .enter()
+    .append('g');
+
+  circles = key.append('circle')
+    .attr('r', 20)
+    .attr("cx", x)
+    .attr("cy", function(d) { y= y+dy; d.y = y; return y; })
+    .attr("class", function(d) {return "nodeCircle " + d.code});
+
+  texts = key.append('text')
+    .attr("y", function(d) { return d.y })
+    .attr("dx", "50")
+    .attr('text-anchor', 'start')
+    .attr('alignment-baseline', 'middle')
+    .attr("class", "label")
+    .text(d => d.title)
+
+}
+
+function drawTitle(title) {
+  svg.append('text')
+    .attr("y", 25)
+    .attr("x", width/2)
+    .attr('text-anchor', 'start')
+    .attr('alignment-baseline', 'middle')
+    .attr("class", "cycle_title")
+    .text(d => title)
+}
+
+const container = "#cycle";
+const width = "960";
+const height = "600";
+
+var svg = d3.select(container)
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+drawTitle("Example Reuse Cycle");
+
+d3.csv("https://raw.githubusercontent.com/reath-id/reuse.id/f/lifecycle/v0.1-alpha/standard/codelists/activity_types.csv", function(data){
+  drawKey(data, activities);
+});
+
+drawCycle({nodes: nodes, links: links});
+
+</script>
+</body>
+</html>
