@@ -1,6 +1,11 @@
-#cycle {
+/* #cycle {
   border: 1px solid black;
+} */
+.cycle-container{
+  border: 1px solid black;
+  display: none;
 }
+
 .label {
   font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 14px;

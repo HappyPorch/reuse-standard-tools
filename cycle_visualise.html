@@ -6,7 +6,13 @@
 	</head>
 
 	<body>
-		<div id="cycle"></div>
+    <div id="input">
+      <h3>Select the data source to be used</h3>
+      <p>Data source:</p>
+      <input type="text" id="data-source-input"/>
+      <button type="button" onclick="handleDataSourceSubmit()">Read source</button>
+    </div>
+		<div id="cycle" class="cycle-container"></div>
 		<script src="js/main.js"></script>
 	</body>
 </html>
