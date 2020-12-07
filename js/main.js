@@ -288,7 +288,8 @@ function drawCycle(activities) {
 }
 
 const SCHEMA_TYPE = "https://reuse-standard.org/v0.1-alpha/schema/reuse.schema.json#";
-async function renderCycle() {
+
+async function renderCycle(initialUrl) {
   async function _fetchData(url) {
     try {
       const { data } = await axios.get(url);
@@ -300,9 +301,7 @@ async function renderCycle() {
     }
   }
 
-  const data = await _fetchData(
-    "https://raw.githubusercontent.com/reath-id/reuse-standard/f/lifecycle/v0.1-alpha/examples/reuse-cycle-only-exit-entry_activities.json"
-  );
+  const data = await _fetchData(initialUrl);
 
   if (data.$schema != SCHEMA_TYPE) {
     renderError("Invalid data schema");
@@ -323,7 +322,11 @@ function renderError(errMsg) {
 }
 
 function handleDataSourceSubmit() {
-  renderCycle().catch((e) => {
+  var value = $("#data-source-input").val();
+
+  console.log(value);
+
+  renderCycle(value).catch((e) => {
     console.error(e);
   });
 }
