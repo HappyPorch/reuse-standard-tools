@@ -59,6 +59,10 @@ function drawCycle(graphDataSource) {
 		.attr('width', width)
 		.attr('height', height);
 
+	console.log(svg);
+
+	const svgRef = svg._groups[0][0];
+
 	// convert activities to links
 	activities.forEach(function (act) {
 		if (act.next) {
@@ -335,13 +339,15 @@ function drawCycle(graphDataSource) {
 	function _drawTitle(title) {
 		svg
 			.append('text')
-			.attr('y', 25)
-			.attr('x', width / 2)
+			.attr('y', 30)
+			.attr('x', svgRef.clientWidth / 2)
 			.attr('text-anchor', 'start')
 			.attr('alignment-baseline', 'middle')
 			.attr('class', 'cycle_title')
 			.text((d) => title);
 	}
+
+	$('#cycle').show();
 
 	_drawTitle('Example Reuse Cycle');
 
@@ -351,8 +357,6 @@ function drawCycle(graphDataSource) {
 			_drawKey(data, activities);
 		}
 	);
-
-	$('#cycle').show();
 
 	_drawCycle({ nodes: nodes, links: links });
 }
