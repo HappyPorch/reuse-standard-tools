@@ -1,0 +1,35 @@
+#cycle {
+  border: 1px solid black;
+}
+.label {
+  font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+.cycle_title {
+  color: #999999;
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 0px;
+  margin-bottom: 1px;
+}
+.nodeCircle {
+  stroke: #424242;
+  stroke-width: '1px';
+}
+.start_step {
+  fill: #bdd9bf;
+}
+.step {
+  fill: #a997df;
+}
+.clean_step {
+  fill: #ffc857;
+}
+._step_exit {
+  fill-opacity: 0.4;
+  stroke-dasharray: 8;
+}
+._step_entry {
+  fill-opacity: 0.8;
+  stroke-dasharray: 4;
+}
