@@ -42,6 +42,23 @@ function drawCycle(graphDataSource) {
 
 	var links = [];
 
+	const container = '#cycle';
+	const width = '100%';
+	const height = '600';
+	const svgCanvasId = 'drawing-svg';
+
+	const existingCanvas = $(`#${svgCanvasId}`);
+	if (existingCanvas) {
+		existingCanvas.remove();
+	}
+
+	const svg = d3
+		.select(container)
+		.append('svg')
+		.attr('id', svgCanvasId)
+		.attr('width', width)
+		.attr('height', height);
+
 	// convert activities to links
 	activities.forEach(function (act) {
 		if (act.next) {
@@ -325,16 +342,6 @@ function drawCycle(graphDataSource) {
 			.attr('class', 'cycle_title')
 			.text((d) => title);
 	}
-
-	const container = '#cycle';
-	const width = '100%';
-	const height = '600';
-
-	var svg = d3
-		.select(container)
-		.append('svg')
-		.attr('width', width)
-		.attr('height', height);
 
 	_drawTitle('Example Reuse Cycle');
 
