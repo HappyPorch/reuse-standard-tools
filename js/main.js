@@ -1,367 +1,367 @@
-function drawCycle(graphDataSource) {
-	var activities = [
-		{
-			activity_id: '1a774e5a-cd1a-40d4-97b7-f513fd4112b3',
-			activity_type: 'step',
-			name: 'Purchased',
-			next: ['a2cc56d3-1223-4bca-bc21-f0a35109d166'],
-		},
-		{
-			activity_id: 'a2cc56d3-1223-4bca-bc21-f0a35109d166',
-			activity_type: 'start_step',
-			name: 'Filled',
-			next: ['acc46828-10cd-4066-8700-011dc35df8ff'],
-		},
-		{
-			activity_id: 'acc46828-10cd-4066-8700-011dc35df8ff',
-			activity_type: 'step',
-			name: 'Delivered',
-			next: ['2b91eb48-b33f-400b-9b54-88b338f2cb9d'],
-		},
-		{
-			activity_id: '2b91eb48-b33f-400b-9b54-88b338f2cb9d',
-			activity_type: 'step',
-			name: 'Returned',
-			next: ['441ed3d0-cfac-48d9-a9ef-571594d8e400'],
-		},
-		{
-			activity_id: '441ed3d0-cfac-48d9-a9ef-571594d8e400',
-			activity_type: 'clean_step',
-			name: 'Cleaned',
-			next: [
-				'a2cc56d3-1223-4bca-bc21-f0a35109d166',
-				'bfe19346-5463-4f4c-83a7-88ba0f1e5531',
-			],
-		},
-		{
-			activity_id: 'bfe19346-5463-4f4c-83a7-88ba0f1e5531',
-			activity_type: 'step',
-			name: 'Recycled',
-		},
-	];
+function drawCycle(activities) {
+  var links = [];
 
-	var links = [];
+  const container = "#cycle";
+  const width = "100%";
+  const height = "600";
+  const svgCanvasId = "drawing-svg";
 
-	const container = '#cycle';
-	const width = '100%';
-	const height = '600';
-	const svgCanvasId = 'drawing-svg';
+  const existingCanvas = $(`#${svgCanvasId}`);
+  if (existingCanvas) {
+    existingCanvas.remove();
+  }
 
-	const existingCanvas = $(`#${svgCanvasId}`);
-	if (existingCanvas) {
-		existingCanvas.remove();
-	}
+  const svg = d3.select(container).append("svg").attr("id", svgCanvasId).attr("width", width).attr("height", height);
 
-	const svg = d3
-		.select(container)
-		.append('svg')
-		.attr('id', svgCanvasId)
-		.attr('width', width)
-		.attr('height', height);
+  const svgRef = svg._groups[0][0];
 
-	console.log(svg);
+  // convert activities to links
+  activities.forEach(function (act) {
+    if (act.next) {
+      act.next.forEach(function (n) {
+        links.push({ source: act.activity_id, target: n, name: act.name });
+      });
+    }
+  });
 
-	const svgRef = svg._groups[0][0];
+  function getStepType(act) {
+    return act.activity_type ?? "step";
+  }
 
-	// convert activities to links
-	activities.forEach(function (act) {
-		if (act.next) {
-			act.next.forEach(function (n) {
-				links.push({ source: act.activity_id, target: n, name: act.name });
-			});
-		}
-	});
+  var nodes = [];
+  // Compute the distinct nodes from the links.
+  links.forEach(function (link) {
+    if (!nodes.find(({ id }) => id === link.source))
+      nodes.push({ id: link.source, name: link.source, label: link.name });
+    if (!nodes.find(({ id }) => id === link.target)) {
+      var targetAct = activities.find(({ activity_id }) => activity_id === link.target);
+      nodes.push({ id: link.target, name: link.target, label: targetAct.name });
+    }
+  });
 
-	function getStepType(act) {
-		return act.activity_type ?? 'step';
-	}
+  nodes.forEach(function (n) {
+    var activity = activities.find(({ activity_id }) => activity_id === n.id);
+    n.type = getStepType(activity);
+    n.is_exit = _isExitActivity(activity.next);
+    n.is_entry = _isEntryActivity(activities, n.id);
+  });
 
-	var nodes = [];
-	// Compute the distinct nodes from the links.
-	links.forEach(function (link) {
-		if (!nodes.find(({ id }) => id === link.source))
-			nodes.push({ id: link.source, name: link.source, label: link.name });
-		if (!nodes.find(({ id }) => id === link.target)) {
-			var targetAct = activities.find(
-				({ activity_id }) => activity_id === link.target
-			);
-			nodes.push({ id: link.target, name: link.target, label: targetAct.name });
-		}
-	});
+  function _isEntryActivity(activities, activity_id) {
+    return !activities.find(({ next }) => next && next.includes(activity_id));
+  }
+  function _isExitActivity(activity_next) {
+    return !activity_next || activity_next.length == 0;
+  }
 
-	nodes.forEach(function (n) {
-		var activity = activities.find(({ activity_id }) => activity_id === n.id);
-		n.type = getStepType(activity);
-		n.is_exit = _isExitActivity(activity.next);
-		n.is_entry = _isEntryActivity(activities, n.id);
-	});
+  function _drawCycle(graph) {
+    var simulation = d3
+      .forceSimulation()
+      .force(
+        "link",
+        d3.forceLink().id(function (d) {
+          return d.id;
+        })
+      )
+      .force("charge", d3.forceManyBody().strength(-1900).theta(0.5).distanceMax(1500))
+      .force(
+        "collision",
+        d3.forceCollide().radius(function (d) {
+          return d.radius;
+        })
+      )
+      .force(
+        "center",
+        d3.forceCenter(
+          document.querySelector(container).clientWidth / 2,
+          document.querySelector(container).clientHeight / 2
+        )
+      );
 
-	function _isEntryActivity(activities, activity_id) {
-		return !activities.find(({ next }) => next && next.includes(activity_id));
-	}
-	function _isExitActivity(activity_next) {
-		return !activity_next || activity_next.length == 0;
-	}
+    var defs = svg.append("defs");
 
-	function _drawCycle(graph) {
-		var simulation = d3
-			.forceSimulation()
-			.force(
-				'link',
-				d3.forceLink().id(function (d) {
-					return d.id;
-				})
-			)
-			.force(
-				'charge',
-				d3.forceManyBody().strength(-1900).theta(0.5).distanceMax(1500)
-			)
-			.force(
-				'collision',
-				d3.forceCollide().radius(function (d) {
-					return d.radius;
-				})
-			)
-			.force(
-				'center',
-				d3.forceCenter(
-					document.querySelector(container).clientWidth / 2,
-					document.querySelector(container).clientHeight / 2
-				)
-			);
+    defs
+      .append("marker")
+      .attr("id", "arrowhead")
+      .attr("viewBox", "-0 -5 10 10")
+      .attr("refX", 13)
+      .attr("refY", 0)
+      .attr("orient", "auto")
+      .attr("markerWidth", 13)
+      .attr("markerHeight", 13)
+      .attr("xoverflow", "visible")
+      .append("path")
+      .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+      .attr("fill", "#999")
+      .style("stroke", "none");
 
-		var defs = svg.append('defs');
+    var link = svg
+      .append("g")
+      .selectAll("line")
+      .data(graph.links)
+      .enter()
+      .append("polyline")
+      .attr("marker-end", "url(#arrowhead)");
 
-		defs
-			.append('marker')
-			.attr('id', 'arrowhead')
-			.attr('viewBox', '-0 -5 10 10')
-			.attr('refX', 13)
-			.attr('refY', 0)
-			.attr('orient', 'auto')
-			.attr('markerWidth', 13)
-			.attr('markerHeight', 13)
-			.attr('xoverflow', 'visible')
-			.append('path')
-			.attr('d', 'M 0,-5 L 10 ,0 L 0,5')
-			.attr('fill', '#999')
-			.style('stroke', 'none');
+    link.style("stroke", "#aaa");
 
-		var link = svg
-			.append('g')
-			.selectAll('line')
-			.data(graph.links)
-			.enter()
-			.append('polyline')
-			.attr('marker-end', 'url(#arrowhead)');
+    var node = svg
+      .append("g")
+      .attr("class", "nodes")
+      .selectAll("circle")
+      .data(graph.nodes)
+      .enter()
+      .append("circle")
+      .attr("r", 36);
+    //.attr("r", function(d){return d.category==0 ? 45 : 35}); //todo: different colours for diff types
 
-		link.style('stroke', '#aaa');
+    node.attr("class", function (d) {
+      return (cls = "nodeCircle " + d.type + (d.is_exit ? " _step_exit" : "") + (d.is_entry ? " _step_entry" : ""));
+    });
 
-		var node = svg
-			.append('g')
-			.attr('class', 'nodes')
-			.selectAll('circle')
-			.data(graph.nodes)
-			.enter()
-			.append('circle')
-			.attr('r', 36);
-		//.attr("r", function(d){return d.category==0 ? 45 : 35}); //todo: different colours for diff types
+    node.on("mouseover", _mouseover).on("mouseout", _mouseout).call(
+      d3.drag().on("start", _dragstarted).on("drag", _dragged)
+      //.on("end", dragended)
+    );
 
-		node.attr('class', function (d) {
-			return (cls =
-				'nodeCircle ' +
-				d.type +
-				(d.is_exit ? ' _step_exit' : '') +
-				(d.is_entry ? ' _step_entry' : ''));
-		});
+    var label = svg
+      .append("g")
+      .attr("class", "labels")
+      .selectAll("text")
+      .data(graph.nodes)
+      .enter()
+      .append("text")
+      .text(function (d) {
+        return d.label;
+      })
+      .attr("class", "label")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "middle");
 
-		node.on('mouseover', _mouseover).on('mouseout', _mouseout).call(
-			d3.drag().on('start', _dragstarted).on('drag', _dragged)
-			//.on("end", dragended)
-		);
+    simulation.nodes(graph.nodes).on("tick", _ticked);
+    simulation.force("link").links(graph.links);
 
-		var label = svg
-			.append('g')
-			.attr('class', 'labels')
-			.selectAll('text')
-			.data(graph.nodes)
-			.enter()
-			.append('text')
-			.text(function (d) {
-				return d.label;
-			})
-			.attr('class', 'label')
-			.attr('dy', '.35em')
-			.attr('text-anchor', 'middle');
+    function _getTargetNodeCircumferencePoint(d) {
+      var t_radius = 36;
+      var dx = d.target.x - d.source.x;
+      var dy = d.target.y - d.source.y;
+      var gamma = Math.atan2(dy, dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
+      var tx = d.target.x - Math.cos(gamma) * t_radius;
+      var ty = d.target.y - Math.sin(gamma) * t_radius;
 
-		simulation.nodes(graph.nodes).on('tick', _ticked);
-		simulation.force('link').links(graph.links);
+      return [tx, ty];
+    }
+    function _getSourceNodeCircumferencePoint(d) {
+      var t_radius = 36;
+      var dx = d.source.x - d.target.x;
+      var dy = d.source.y - d.target.y;
+      var gamma = Math.atan2(dy, dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
+      var tx = d.source.x - Math.cos(gamma) * t_radius;
+      var ty = d.source.y - Math.sin(gamma) * t_radius;
 
-		function _getTargetNodeCircumferencePoint(d) {
-			var t_radius = 36;
-			var dx = d.target.x - d.source.x;
-			var dy = d.target.y - d.source.y;
-			var gamma = Math.atan2(dy, dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
-			var tx = d.target.x - Math.cos(gamma) * t_radius;
-			var ty = d.target.y - Math.sin(gamma) * t_radius;
+      return [tx, ty];
+    }
 
-			return [tx, ty];
-		}
-		function _getSourceNodeCircumferencePoint(d) {
-			var t_radius = 36;
-			var dx = d.source.x - d.target.x;
-			var dy = d.source.y - d.target.y;
-			var gamma = Math.atan2(dy, dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
-			var tx = d.source.x - Math.cos(gamma) * t_radius;
-			var ty = d.source.y - Math.sin(gamma) * t_radius;
+    function _mouseover() {
+      d3.select(this).select("circle").transition().duration(750).attr("r", 16);
+    }
 
-			return [tx, ty];
-		}
+    function _mouseout() {
+      d3.select(this).select("circle").transition().duration(750).attr("r", 8);
+    }
 
-		function _mouseover() {
-			d3.select(this).select('circle').transition().duration(750).attr('r', 16);
-		}
+    function _dragstarted(d) {
+      if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
 
-		function _mouseout() {
-			d3.select(this).select('circle').transition().duration(750).attr('r', 8);
-		}
+    function _dragged(d) {
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+    }
 
-		function _dragstarted(d) {
-			if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-			d.fx = d.x;
-			d.fy = d.y;
-		}
+    function _ticked() {
+      link.attr("points", function (d) {
+        var r = 36;
+        sX = _getSourceNodeCircumferencePoint(d)[0];
+        sY = _getSourceNodeCircumferencePoint(d)[1];
+        tX = _getTargetNodeCircumferencePoint(d)[0];
+        tY = _getTargetNodeCircumferencePoint(d)[1];
+        return sX + "," + sY + " " + (sX + tX) / 2 + "," + (sY + tY) / 2 + " " + tX + "," + tY;
+      });
 
-		function _dragged(d) {
-			d.fx = d3.event.x;
-			d.fy = d3.event.y;
-		}
+      node
+        .attr("cx", function (d) {
+          return d.x + 5;
+        })
+        .attr("cy", function (d) {
+          return d.y - 3;
+        });
 
-		function _ticked() {
-			link.attr('points', function (d) {
-				var r = 36;
-				sX = _getSourceNodeCircumferencePoint(d)[0];
-				sY = _getSourceNodeCircumferencePoint(d)[1];
-				tX = _getTargetNodeCircumferencePoint(d)[0];
-				tY = _getTargetNodeCircumferencePoint(d)[1];
-				return (
-					sX +
-					',' +
-					sY +
-					' ' +
-					(sX + tX) / 2 +
-					',' +
-					(sY + tY) / 2 +
-					' ' +
-					tX +
-					',' +
-					tY
-				);
-			});
+      label
+        .attr("x", function (d) {
+          return d.x + 4;
+        })
+        .attr("y", function (d) {
+          return d.y - 4;
+        });
+    }
+  }
 
-			node
-				.attr('cx', function (d) {
-					return d.x + 5;
-				})
-				.attr('cy', function (d) {
-					return d.y - 3;
-				});
+  function _drawKey(activityTypes, activities) {
+    var x = 25;
+    var y = 0;
+    var dy = 45;
+    var nodes = [];
+    var entryNode = null;
+    var exitNode = null;
+    activityTypes.forEach(function (a) {
+      if (activities.find(({ activity_type }) => (activity_type = a.Code))) {
+        nodes.push({ code: a.Code, title: a.Title });
+      }
+      if (!entryNode && activities.find(({ activity_id }) => _isEntryActivity(activities, activity_id))) {
+        entryNode = { code: "step _step_entry", title: "Cycle Entry" };
+      }
+      if (!exitNode && activities.find(({ next }) => _isExitActivity(next))) {
+        exitNode = { code: "step _step_exit", title: "Cycle Exit" };
+      }
+    });
+    if (entryNode) nodes.push(entryNode);
+    if (exitNode) nodes.push(exitNode);
 
-			label
-				.attr('x', function (d) {
-					return d.x + 4;
-				})
-				.attr('y', function (d) {
-					return d.y - 4;
-				});
-		}
-	}
+    var key = svg
+      .selectAll(".key")
+      .data(nodes, function (d) {
+        return d.code;
+      })
+      .enter()
+      .append("g");
 
-	function _drawKey(activityTypes, activities) {
-		var x = 25;
-		var y = 0;
-		var dy = 45;
-		var nodes = [];
-		var entryNode = null;
-		var exitNode = null;
-		activityTypes.forEach(function (a) {
-			if (activities.find(({ activity_type }) => (activity_type = a.Code))) {
-				nodes.push({ code: a.Code, title: a.Title });
-			}
-			if (
-				!entryNode &&
-				activities.find(({ activity_id }) =>
-					_isEntryActivity(activities, activity_id)
-				)
-			) {
-				entryNode = { code: 'step _step_entry', title: 'Cycle Entry' };
-			}
-			if (!exitNode && activities.find(({ next }) => _isExitActivity(next))) {
-				exitNode = { code: 'step _step_exit', title: 'Cycle Exit' };
-			}
-		});
-		if (entryNode) nodes.push(entryNode);
-		if (exitNode) nodes.push(exitNode);
+    circles = key
+      .append("circle")
+      .attr("r", 20)
+      .attr("cx", x)
+      .attr("cy", function (d) {
+        y = y + dy;
+        d.y = y;
+        return y;
+      })
+      .attr("class", function (d) {
+        return "nodeCircle " + d.code;
+      });
 
-		var key = svg
-			.selectAll('.key')
-			.data(nodes, function (d) {
-				return d.code;
-			})
-			.enter()
-			.append('g');
+    texts = key
+      .append("text")
+      .attr("y", function (d) {
+        return d.y;
+      })
+      .attr("dx", "50")
+      .attr("text-anchor", "start")
+      .attr("alignment-baseline", "middle")
+      .attr("class", "label")
+      .text((d) => d.title);
+  }
 
-		circles = key
-			.append('circle')
-			.attr('r', 20)
-			.attr('cx', x)
-			.attr('cy', function (d) {
-				y = y + dy;
-				d.y = y;
-				return y;
-			})
-			.attr('class', function (d) {
-				return 'nodeCircle ' + d.code;
-			});
+  function _drawTitle(title) {
+    svg
+      .append("text")
+      .attr("y", 30)
+      .attr("x", svgRef.clientWidth / 2)
+      .attr("text-anchor", "start")
+      .attr("alignment-baseline", "middle")
+      .attr("class", "cycle_title")
+      .text((d) => title);
+  }
 
-		texts = key
-			.append('text')
-			.attr('y', function (d) {
-				return d.y;
-			})
-			.attr('dx', '50')
-			.attr('text-anchor', 'start')
-			.attr('alignment-baseline', 'middle')
-			.attr('class', 'label')
-			.text((d) => d.title);
-	}
+  $("#cycle").show();
 
-	function _drawTitle(title) {
-		svg
-			.append('text')
-			.attr('y', 30)
-			.attr('x', svgRef.clientWidth / 2)
-			.attr('text-anchor', 'start')
-			.attr('alignment-baseline', 'middle')
-			.attr('class', 'cycle_title')
-			.text((d) => title);
-	}
+  _drawTitle("Example Reuse Cycle");
 
-	$('#cycle').show();
+  d3.csv(
+    "https://raw.githubusercontent.com/reath-id/reuse.id/f/lifecycle/v0.1-alpha/standard/codelists/activity_types.csv",
+    function (data) {
+      _drawKey(data, activities);
+    }
+  );
 
-	_drawTitle('Example Reuse Cycle');
+  _drawCycle({ nodes: nodes, links: links });
+}
 
-	d3.csv(
-		'https://raw.githubusercontent.com/reath-id/reuse.id/f/lifecycle/v0.1-alpha/standard/codelists/activity_types.csv',
-		function (data) {
-			_drawKey(data, activities);
-		}
-	);
+const SCHEMA_TYPE = "https://reuse-standard.org/v0.1-alpha/schema/reuse.schema.json#";
+async function renderCycle() {
+  async function _fetchData(url) {
+    try {
+      const { data } = await axios.get(url);
 
-	_drawCycle({ nodes: nodes, links: links });
+      return data;
+    } catch (err) {
+      console.error(err);
+      renderError("An unknown error has occurred while fetching the cycle data");
+    }
+  }
+
+  const data = await _fetchData(
+    "https://raw.githubusercontent.com/reath-id/reuse-standard/f/lifecycle/v0.1-alpha/examples/reuse-cycle-only-exit-entry_activities.json"
+  );
+
+  if (data.$schema != SCHEMA_TYPE) {
+    renderError("Invalid data schema");
+    return;
+  }
+
+  if (!data.cycles || data.cycles.length < 1) {
+    renderError("There are no cycles to render");
+    return;
+  }
+
+  drawCycle(data.cycles[0].activities);
+}
+
+function renderError(errMsg) {
+  //TODO: Jquery an error message
+  console.error(errMsg);
 }
 
 function handleDataSourceSubmit() {
-	console.log('Data source submit!');
-	drawCycle('somesource.com');
+  renderCycle().catch((e) => {
+    console.error(e);
+  });
 }
+
+const sampleActivites = [
+  {
+    activity_id: "1a774e5a-cd1a-40d4-97b7-f513fd4112b3",
+    activity_type: "step",
+    name: "Purchased",
+    next: ["a2cc56d3-1223-4bca-bc21-f0a35109d166"],
+  },
+  {
+    activity_id: "a2cc56d3-1223-4bca-bc21-f0a35109d166",
+    activity_type: "start_step",
+    name: "Filled",
+    next: ["acc46828-10cd-4066-8700-011dc35df8ff"],
+  },
+  {
+    activity_id: "acc46828-10cd-4066-8700-011dc35df8ff",
+    activity_type: "step",
+    name: "Delivered",
+    next: ["2b91eb48-b33f-400b-9b54-88b338f2cb9d"],
+  },
+  {
+    activity_id: "2b91eb48-b33f-400b-9b54-88b338f2cb9d",
+    activity_type: "step",
+    name: "Returned",
+    next: ["441ed3d0-cfac-48d9-a9ef-571594d8e400"],
+  },
+  {
+    activity_id: "441ed3d0-cfac-48d9-a9ef-571594d8e400",
+    activity_type: "clean_step",
+    name: "Cleaned",
+    next: ["a2cc56d3-1223-4bca-bc21-f0a35109d166", "bfe19346-5463-4f4c-83a7-88ba0f1e5531"],
+  },
+  {
+    activity_id: "bfe19346-5463-4f4c-83a7-88ba0f1e5531",
+    activity_type: "step",
+    name: "Recycled",
+  },
+];
