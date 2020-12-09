@@ -277,12 +277,9 @@ function drawCycle(activities) {
 
   _drawTitle("Example Reuse Cycle");
 
-  d3.csv(
-    "https://raw.githubusercontent.com/reath-id/reuse.id/f/lifecycle/v0.1-alpha/standard/codelists/activity_types.csv",
-    function (data) {
-      _drawKey(data, activities);
-    }
-  );
+  d3.csv("https://reuse-standard.org/v0.1-alpha/standard/codelists/activity_types.csv", function (data) {
+    _drawKey(data, activities);
+  });
 
   _drawCycle({ nodes: nodes, links: links });
 }
@@ -330,41 +327,3 @@ function handleDataSourceSubmit() {
     console.error(e);
   });
 }
-
-const sampleActivites = [
-  {
-    activity_id: "1a774e5a-cd1a-40d4-97b7-f513fd4112b3",
-    activity_type: "step",
-    name: "Purchased",
-    next: ["a2cc56d3-1223-4bca-bc21-f0a35109d166"],
-  },
-  {
-    activity_id: "a2cc56d3-1223-4bca-bc21-f0a35109d166",
-    activity_type: "start_step",
-    name: "Filled",
-    next: ["acc46828-10cd-4066-8700-011dc35df8ff"],
-  },
-  {
-    activity_id: "acc46828-10cd-4066-8700-011dc35df8ff",
-    activity_type: "step",
-    name: "Delivered",
-    next: ["2b91eb48-b33f-400b-9b54-88b338f2cb9d"],
-  },
-  {
-    activity_id: "2b91eb48-b33f-400b-9b54-88b338f2cb9d",
-    activity_type: "step",
-    name: "Returned",
-    next: ["441ed3d0-cfac-48d9-a9ef-571594d8e400"],
-  },
-  {
-    activity_id: "441ed3d0-cfac-48d9-a9ef-571594d8e400",
-    activity_type: "clean_step",
-    name: "Cleaned",
-    next: ["a2cc56d3-1223-4bca-bc21-f0a35109d166", "bfe19346-5463-4f4c-83a7-88ba0f1e5531"],
-  },
-  {
-    activity_id: "bfe19346-5463-4f4c-83a7-88ba0f1e5531",
-    activity_type: "step",
-    name: "Recycled",
-  },
-];
