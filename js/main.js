@@ -1,4 +1,4 @@
-function drawCycle(activities) {
+function drawCycle(activities, title) {
   var links = [];
 
   const container = "#cycle";
@@ -275,7 +275,7 @@ function drawCycle(activities) {
 
   $("#cycle").show();
 
-  _drawTitle("Example Reuse Cycle");
+  _drawTitle(title);
 
   d3.csv("https://reuse-standard.org/v0.1-alpha/standard/codelists/activity_types.csv", function (data) {
     _drawKey(data, activities);
@@ -300,6 +300,8 @@ async function renderCycle(initialUrl) {
 
   const data = await _fetchData(initialUrl);
 
+  console.log(data);
+
   if (data.$schema != SCHEMA_TYPE) {
     renderError("Invalid data schema");
     return;
@@ -310,7 +312,8 @@ async function renderCycle(initialUrl) {
     return;
   }
 
-  drawCycle(data.cycles[0].activities);
+  //TODO: Iterate all the cycles
+  drawCycle(data.cycles[0].activities, data.cycles[0]?.name || "Sample Cycle");
 }
 
 function renderError(errMsg) {
