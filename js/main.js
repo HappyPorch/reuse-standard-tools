@@ -1,17 +1,30 @@
-function drawCycle(activities, title) {
-  var links = [];
+const cyclesContainerId = "#cycles-container";
 
-  const container = "#cycle";
+let cyclesDiv = null;
+$(document).ready(function () {
+  cyclesDiv = $(cyclesContainerId)[0];
+  console.log(cyclesDiv);
+});
+
+function clearCycles() {
+  //cyclesDiv.innerHtml = "";
+}
+
+function drawCycle(activities, title, cycleIndex) {
+  var links = [];
   const width = "100%";
   const height = "600";
-  const svgCanvasId = "drawing-svg";
 
-  const existingCanvas = $(`#${svgCanvasId}`);
-  if (existingCanvas) {
-    existingCanvas.remove();
-  }
+  const svgContainerId = `drawing-svg-${cycleIndex}`;
 
-  const svg = d3.select(container).append("svg").attr("id", svgCanvasId).attr("width", width).attr("height", height);
+  const svgContainer = document.createElement("div");
+  svgContainer.id = svgContainerId; //Add a class here?
+  svgContainer.className = "cycle-container";
+  cyclesDiv.appendChild(svgContainer);
+
+  const svg = d3.select(`#${svgContainerId}`).append("svg").attr("width", width).attr("height", height);
+
+  console.log("SVG", svg);
 
   const svgRef = svg._groups[0][0];
 
@@ -72,8 +85,8 @@ function drawCycle(activities, title) {
       .force(
         "center",
         d3.forceCenter(
-          document.querySelector(container).clientWidth / 2,
-          document.querySelector(container).clientHeight / 2
+          document.querySelector(cyclesContainerId).clientWidth / 2,
+          document.querySelector(cyclesContainerId).clientHeight / 2
         )
       );
 
@@ -273,7 +286,7 @@ function drawCycle(activities, title) {
       .text((d) => title);
   }
 
-  $("#cycle").show();
+  $(cyclesContainerId).show();
 
   _drawTitle(title);
 
@@ -312,8 +325,12 @@ async function renderCycle(initialUrl) {
     return;
   }
 
-  //TODO: Iterate all the cycles
-  drawCycle(data.cycles[0].activities, data.cycles[0]?.name || "Sample Cycle");
+  clearCycles();
+
+  for (let i = 0; i < data.cycles.length; i++) {
+    const element = data.cycles[i];
+    drawCycle(element.activities, element?.name || "Sample Cycle", i);
+  }
 }
 
 function renderError(errMsg) {
@@ -327,6 +344,9 @@ function handleDataSourceSubmit() {
   console.log(value);
 
   renderCycle(value).catch((e) => {
-    console.error(e);
+    renderError(e);
   });
 }
+
+//examples/multiple-cycles.json
+//https://raw.githubusercontent.com/reath-id/reuse-standard/main/v0.1-alpha/examples/reuse-cycle-only-exit-entry_activities.json
