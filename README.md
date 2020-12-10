@@ -13,3 +13,7 @@ Tech Stack:
 1. If this is your first time on the project, at the root of the repository, run `npm run setup` to install the local static http server
 1. Start the project with `npm start`
 1. Tool should be available at `http://localhost:8080/cycle_visualise.html`
+
+
+# Hot-Reloading Capabilities
+This React Native project uses a technology called **Hot-Reloading**, meaning you don't have the re-run/re-build your project to see your changes reflected on the screen. Just save the file and your application should automatically refresh the latest changes :)
