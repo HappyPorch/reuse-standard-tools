@@ -24,8 +24,6 @@ function drawCycle(activities, title, cycleIndex) {
 
   const svg = d3.select(`#${svgContainerId}`).append("svg").attr("width", width).attr("height", height);
 
-  console.log("SVG", svg);
-
   const svgRef = svg._groups[0][0];
 
   // convert activities to links
@@ -52,6 +50,13 @@ function drawCycle(activities, title, cycleIndex) {
     }
   });
 
+  function _isEntryActivity(activities, activity_id) {
+    return !activities.find(({ next }) => next && next.includes(activity_id));
+  }
+  function _isExitActivity(activity_next) {
+    return !activity_next || activity_next.length == 0;
+  }
+
   nodes.forEach(function (n) {
     var activity = activities.find(({ activity_id }) => activity_id === n.id);
     n.type = getStepType(activity);
@@ -59,12 +64,6 @@ function drawCycle(activities, title, cycleIndex) {
     n.is_entry = _isEntryActivity(activities, n.id);
   });
 
-  function _isEntryActivity(activities, activity_id) {
-    return !activities.find(({ next }) => next && next.includes(activity_id));
-  }
-  function _isExitActivity(activity_next) {
-    return !activity_next || activity_next.length == 0;
-  }
 
   function _drawCycle(graph) {
     var simulation = d3
@@ -85,8 +84,8 @@ function drawCycle(activities, title, cycleIndex) {
       .force(
         "center",
         d3.forceCenter(
-          document.querySelector(cyclesContainerId).clientWidth / 2,
-          document.querySelector(cyclesContainerId).clientHeight / 2
+          svgRef.clientWidth / 2, 
+          svgRef.clientHeight / 2
         )
       );
 
