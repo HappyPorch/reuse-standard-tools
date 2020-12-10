@@ -12,3 +12,4 @@ Tech Stack:
     - Run `node -v` and `npm -v` to confirm installation
 1. If this is your first time on the project, at the root of the repository, run `npm run setup` to install the local static http server
 1. Start the project with `npm start`
+1. Tool should be available at `http://127.0.0.1:8080/cycle_visualise.html`
