@@ -289,14 +289,14 @@ function drawCycle(activities, title, cycleIndex) {
 
   _drawTitle(title);
 
-  d3.csv("https://reuse-standard.org/v0.1-alpha/standard/codelists/activity_types.csv", function (data) {
+  d3.csv("https://reuse-standard.org/standard/codelists/activity_types.csv", function (data) {
     _drawKey(data, activities);
   });
 
   _drawCycle({ nodes: nodes, links: links });
 }
 
-const SCHEMA_TYPE = "https://reuse-standard.org/v0.1-alpha/schema/reuse.schema.json#";
+const SCHEMA_TYPE = "https://reuse-standard.org/schema/reuse.schema.json#";
 
 async function renderCycle(initialUrl) {
   async function _fetchData(url) {
