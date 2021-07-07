@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="css/main.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.8.0/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js"></script>
+  </head>
+
+  <body>
+    <div id="input">
+      <h3>Select the data source to be used</h3>
+      <p>Data source:</p>
+      <input type="text" id="data-source-input" />
+      <button type="button" onclick="handleDataSourceSubmit()">Read source</button>
+    </div>
+    <div id="cycles-container" class="cycles-container"></div>
+    <script src="js/main.js"></script>
+  </body>
+</html>
